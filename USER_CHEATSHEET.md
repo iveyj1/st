@@ -166,7 +166,17 @@ float alphaUnfocus;
 
 Patch: `externalpipe`, `externalpipe-eternal`, URL helpers, and copyout helper.
 
-These use external scripts.
+These use external scripts and external packages.
+
+Required runtime tools:
+
+| Tool | Used for | Common package name |
+|---|---|---|
+| `dmenu` | URL/output picker menu. | `dmenu` |
+| `xdg-open` | Open selected URL. | `xdg-utils` |
+| `xclip` | Copy selected URL/output. | `xclip` |
+| `st-urlhandler` | Extract/open/copy URLs. | Installed by this repo. |
+| `st-copyout` | Extract command output. | Installed by this repo. |
 
 | Key | Action | Needs |
 |---|---|---|
@@ -202,6 +212,24 @@ st -o session.log
 
 Patch: `font2` and `ligatures` / Harfbuzz.
 
+Build-time font/render dependencies:
+
+| Tool/library | Common package name |
+|---|---|
+| Xft | `libxft-dev`, `libxft`, or `libXft-devel` |
+| Fontconfig | `fontconfig`, `libfontconfig-dev`, or `fontconfig-devel` |
+| FreeType | `libfreetype-dev`, `freetype2`, or `freetype-devel` |
+| Harfbuzz | `libharfbuzz-dev`, `harfbuzz`, or `harfbuzz-devel` |
+| Xrender | `libxrender-dev`, `libXrender`, or `libXrender-devel` |
+
+Useful font packages:
+
+| Font | Purpose |
+|---|---|
+| Nerd Font Mono | Main terminal font with icons. |
+| Noto Color Emoji | Emoji fallback. |
+| Symbols Nerd Font | Symbol fallback if main font lacks icons. |
+
 Main font lives in `config.def.h`:
 
 ```c
@@ -217,6 +245,8 @@ static char *font2[] = {
 ```
 
 Use a monospace font as main font. Use `font2` for emoji and symbols.
+
+If icons look too large, fontconfig probably chose an emoji fallback for those glyphs. Use an exact `Nerd Font Mono` family as main font. Keep `Noto Color Emoji` smaller in `font2`, or remove it for testing.
 
 Test font names:
 

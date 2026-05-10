@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = "DroidSansM Nerd Font Mono:pixelsize=32:antialias=true:autohint=true";
-static char *font2[] = { "NotoColorEmoji:pixelsize=32:antialias=true:autohint=true" };
+static char *font2[] = { "DejaVu Sans Mono:pixelsize=32:antialias=true:autohint=true" };
 static int borderpx = 2;
 
 /*
