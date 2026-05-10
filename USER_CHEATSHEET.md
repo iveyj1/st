@@ -59,6 +59,7 @@ Names follow common suckless patch names where possible.
 | `ligatures` / `harfbuzz` | Enables font ligatures and shaping. |
 | `xclearwin` | Clears dirty borders after color/window changes. |
 | `osc` / `osc-color-reload` | Supports live color changes from OSC sequences. Useful for pywal. |
+| `vim-browse`-style normal mode | Adds keyboard browsing over scrollback. This is a local port, not a clean upstream patch apply. |
 | `newterm` is not included | No default keybind launches another terminal. |
 
 ## Core keybinds
@@ -96,6 +97,37 @@ Patch: `scrollback`, `scrollback-mouse`, `scrollback-mouse-altscreen`.
 | `Alt+PageDown` | Scroll forward 1 page. |
 
 Note: applications can capture mouse wheel in alternate screen. Hold `Shift` to force mouse escape behavior for apps.
+
+## Vim-browse normal mode
+
+Patch: local `vim-browse`-style port. It keeps Luke scrollback instead of replacing history code.
+
+Enter with:
+
+| Key | Action |
+|---|---|
+| `Alt+Escape` | Toggle normal browse mode. |
+
+Inside normal browse mode:
+
+| Key | Action |
+|---|---|
+| `h` or `Left` | Move cursor left. |
+| `j` or `Down` | Move cursor down. Scrolls forward at bottom. |
+| `k` or `Up` | Move cursor up. Scrolls back at top. |
+| `l` or `Right` | Move cursor right. |
+| `0` or `Home` | Move to line start. |
+| `$` or `End` | Move to line end. |
+| `Ctrl+d` or `PageDown` | Move down half/page. |
+| `Ctrl+u` or `PageUp` | Move up half/page. |
+| `gg` | Go to top of scrollback. |
+| `G` | Go to live bottom. |
+| `v` | Toggle visual selection. |
+| `V` | Toggle visual line selection. |
+| `y` | Yank selection. Without visual mode, yank current line. |
+| `Esc`, `Ctrl+c`, `q`, `i`, or `Enter` | Exit normal browse mode. |
+
+Not included yet: `/` search, `n/N`, text objects, counts, macros.
 
 ## Font size
 

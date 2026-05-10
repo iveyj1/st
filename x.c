@@ -2055,6 +2055,10 @@ reallocbuf:
 	} else {
 		len = XLookupString(e, buf, buf_size, &ksym, NULL);
 	}
+
+	if (normalModeKpress((uint)ksym, buf, len, e->state & ControlMask))
+		goto cleanup;
+
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
 		if (ksym == bp->keysym && match(bp->mod, e->state)) {

@@ -88,6 +88,8 @@ void draw(void);
 void externalpipe(const Arg *);
 void kscrolldown(const Arg *);
 void kscrollup(const Arg *);
+void normalMode(const Arg *);
+int normalModeKpress(uint, const char *, int, int);
 
 void printscreen(const Arg *);
 void printsel(const Arg *);

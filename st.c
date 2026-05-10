@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <X11/keysym.h>
 #include <limits.h>
 #include <pwd.h>
 #include <stdarg.h>
@@ -188,6 +189,7 @@ static void tdeleteline(int);
 static void tinsertblank(int);
 static void tinsertblankline(int);
 static int tlinelen(int);
+static int tlinelenview(int);
 static void tmoveto(int, int);
 static void tmoveato(int, int);
 static void tnewline(int);
@@ -239,6 +241,9 @@ static const uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
 static const uchar utfmask[UTF_SIZ + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
 static const Rune utfmin[UTF_SIZ + 1] = {       0,    0,  0x80,  0x800,  0x10000};
 static const Rune utfmax[UTF_SIZ + 1] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
+
+static int normalModeActive;
+static int nm_x, nm_y, nm_visual, nm_visual_line, nm_pending_g;
 
 ssize_t
 xwrite(int fd, const char *s, size_t len)
@@ -426,6 +431,188 @@ tlinelen(int y)
 		--i;
 
 	return i;
+}
+
+int
+tlinelenview(int y)
+{
+	return tlinelen(y);
+}
+
+static void
+nmclip(void)
+{
+	char *s;
+
+	s = getsel();
+	if (s) {
+		xsetsel(s);
+		xclipcopy();
+	}
+}
+
+static void
+nmmove(int dx, int dy)
+{
+	Arg a;
+
+	nm_x = MAX(0, MIN(term.col - 1, nm_x + dx));
+	if (dy < 0) {
+		while (dy++ < 0) {
+			if (nm_y > 0)
+				nm_y--;
+			else {
+				a.i = 1;
+				kscrollup(&a);
+			}
+		}
+	} else if (dy > 0) {
+		while (dy-- > 0) {
+			if (nm_y < term.row - 1)
+				nm_y++;
+			else {
+				a.i = 1;
+				kscrolldown(&a);
+			}
+		}
+	}
+	if (nm_x >= tlinelenview(nm_y))
+		nm_x = MAX(0, tlinelenview(nm_y) - 1);
+	if (nm_visual)
+		selextend(nm_visual_line ? term.col - 1 : nm_x, nm_y,
+		    SEL_REGULAR, 0);
+	tfulldirt();
+}
+
+void
+normalMode(const Arg *arg)
+{
+	if (IS_SET(MODE_ALTSCREEN))
+		return;
+	normalModeActive = !normalModeActive;
+	nm_pending_g = 0;
+	if (normalModeActive) {
+		nm_x = MIN(term.c.x, term.col - 1);
+		nm_y = MIN(term.c.y, term.row - 1);
+	} else {
+		nm_visual = nm_visual_line = 0;
+		selclear();
+	}
+	tfulldirt();
+}
+
+int
+normalModeKpress(uint ksym, const char *buf, int len, int ctrl)
+{
+	Arg a;
+	char c = len == 1 ? buf[0] : 0;
+
+	if (!normalModeActive)
+		return 0;
+
+	if (ksym == XK_Escape || (ctrl && (ksym == XK_c || c == 'c')) ||
+	    c == 'q' || c == 'i' || c == '\r') {
+		normalModeActive = 0;
+		nm_visual = nm_visual_line = nm_pending_g = 0;
+		selclear();
+		tfulldirt();
+		return 1;
+	}
+
+	if (ctrl && (ksym == XK_d || c == 'd')) {
+		a.i = -(term.row / 2);
+		kscrolldown(&a);
+		tfulldirt();
+		return 1;
+	}
+	if (ctrl && (ksym == XK_u || c == 'u')) {
+		a.i = -(term.row / 2);
+		kscrollup(&a);
+		tfulldirt();
+		return 1;
+	}
+
+	if (nm_pending_g) {
+		nm_pending_g = 0;
+		if (c == 'g') {
+			a.i = -1;
+			kscrollup(&a);
+			nm_y = 0;
+			nm_x = 0;
+			tfulldirt();
+			return 1;
+		}
+	}
+
+	switch (ksym) {
+	case XK_Left:  c = 'h'; break;
+	case XK_Down:  c = 'j'; break;
+	case XK_Up:    c = 'k'; break;
+	case XK_Right: c = 'l'; break;
+	case XK_Home:  c = '0'; break;
+	case XK_End:   c = '$'; break;
+	case XK_Next:  c = 4; break;
+	case XK_Prior: c = 21; break;
+	}
+
+	switch (c) {
+	case 'h': nmmove(-1, 0); break;
+	case 'j': nmmove(0, 1); break;
+	case 'k': nmmove(0, -1); break;
+	case 'l': nmmove(1, 0); break;
+	case '0': nm_x = 0; tfulldirt(); break;
+	case '$': nm_x = MAX(0, tlinelenview(nm_y) - 1); tfulldirt(); break;
+	case 'g': nm_pending_g = 1; break;
+	case 'G':
+		a.i = -1;
+		kscrolldown(&a);
+		nm_y = term.c.y;
+		nm_x = term.c.x;
+		tfulldirt();
+		break;
+	case 'v':
+		nm_visual = !nm_visual;
+		nm_visual_line = 0;
+		if (nm_visual)
+			selstart(nm_x, nm_y, 0);
+		else
+			selclear();
+		tfulldirt();
+		break;
+	case 'V':
+		nm_visual = !nm_visual;
+		nm_visual_line = nm_visual;
+		if (nm_visual) {
+			selstart(0, nm_y, 0);
+			selextend(term.col - 1, nm_y, SEL_REGULAR, 0);
+		} else
+			selclear();
+		tfulldirt();
+		break;
+	case 'y':
+		if (!nm_visual) {
+			selstart(0, nm_y, 0);
+			selextend(term.col - 1, nm_y, SEL_REGULAR, 1);
+		}
+		nmclip();
+		nm_visual = nm_visual_line = 0;
+		selclear();
+		tfulldirt();
+		break;
+	case 4:
+		a.i = -(term.row - 1);
+		kscrolldown(&a);
+		tfulldirt();
+		break;
+	case 21:
+		a.i = -(term.row - 1);
+		kscrollup(&a);
+		tfulldirt();
+		break;
+	default:
+		break;
+	}
+	return 1;
 }
 
 int
@@ -1999,6 +2186,8 @@ strhandle(void)
 			if (narg > 1)
 				xsettitle(strescseq.args[1]);
 			return;
+		case 8: /* hyperlink (OSC 8); unsupported, silently ignore */
+			return;
 		case 52: /* manipulate selection data */
 			if (narg > 2 && allowwindowops) {
 				dec = base64dec(strescseq.args[2]);
@@ -2842,13 +3031,16 @@ draw(void)
 		cx--;
 
 	drawregion(0, 0, term.col, term.row);
-	if (term.scr == 0)
+	if (normalModeActive) {
+		int ncx = nm_x;
+		if (TLINE(nm_y)[ncx].mode & ATTR_WDUMMY && ncx > 0)
+			ncx--;
+		xdrawcursor(ncx, nm_y, TLINE(nm_y)[ncx], ncx, nm_y,
+		    TLINE(nm_y)[ncx], TLINE(nm_y), term.col);
+	} else if (term.scr == 0)
 		xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 				term.ocx, term.ocy, term.line[term.ocy][term.ocx],
 				term.line[term.ocy], term.col);
-	/* xdrawcursor(cx, term.c.y, term.line[term.c.y][cx], */
-	/* 		term.ocx, term.ocy, term.line[term.ocy][term.ocx], */
-	/* 		term.line[term.ocy], term.col); */
 	term.ocx = cx;
 	term.ocy = term.c.y;
 	xfinishdraw();
