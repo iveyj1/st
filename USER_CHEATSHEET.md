@@ -37,12 +37,38 @@ st -e htop
 | `-v` | Print version and exit. |
 | `-e cmd ...` | Run command. Must be last option. |
 
+## Included patches
+
+Names follow common suckless patch names where possible.
+
+| Patch / feature | User-visible effect |
+|---|---|
+| `clipboard` | Adds clipboard copy/paste shortcuts. |
+| `scrollback` | Adds terminal scrollback buffer. |
+| `scrollback-mouse` | Adds mouse wheel scrollback. |
+| `externalpipe` / `externalpipe-eternal` | Pipes screen or scrollback to helper commands. |
+| `openurlonclick`-style helpers | Opens or copies URLs through `st-urlhandler` and `dmenu`. |
+| `copyurl` helper | Copies selected URL through `st-urlhandler`. |
+| `copyout` helper | Copies output of recent command through `st-copyout`. |
+| `alpha` | Adds background transparency. |
+| `alpha-focus-highlight` | Changes opacity when focused/unfocused. |
+| `xresources` | Loads font, colors, alpha, border, and other settings from Xresources. |
+| `anysize` | Allows any window size. Pads unused space cleanly. |
+| `font2` | Adds configured fallback fonts. Useful for emoji and Nerd Font symbols. |
+| `boxdraw` | Draws box/block characters internally for clean alignment. |
+| `ligatures` / `harfbuzz` | Enables font ligatures and shaping. |
+| `xclearwin` | Clears dirty borders after color/window changes. |
+| `osc` / `osc-color-reload` | Supports live color changes from OSC sequences. Useful for pywal. |
+| `newterm` is not included | No default keybind launches another terminal. |
+
 ## Core keybinds
 
 | Key | Action |
 |---|---|
 | `Alt+c` | Copy selection to clipboard. |
 | `Alt+v` | Paste from clipboard. |
+| `Ctrl+Shift+c` | Copy selection to clipboard. |
+| `Ctrl+Shift+v` | Paste from clipboard. |
 | `Shift+Insert` | Paste from clipboard. |
 | `Alt+Shift+c` | Copy selection to clipboard. |
 | `Alt+Shift+v` | Paste from clipboard. |
@@ -51,6 +77,8 @@ st -e htop
 | `Break` | Send serial break. |
 
 ## Scrollback
+
+Patch: `scrollback`, `scrollback-mouse`, `scrollback-mouse-altscreen`.
 
 | Key / mouse | Action |
 |---|---|
@@ -85,6 +113,8 @@ Note: applications can capture mouse wheel in alternate screen. Hold `Shift` to 
 
 ## Transparency
 
+Patch: `alpha`, plus focus alpha support.
+
 | Key | Action |
 |---|---|
 | `Alt+a` | Increase opacity. Make less transparent. |
@@ -101,6 +131,8 @@ float alphaUnfocus;
 `alpha` ranges roughly from `0.0` to `1.0`.
 
 ## URL and output helpers
+
+Patch: `externalpipe`, `externalpipe-eternal`, URL helpers, and copyout helper.
 
 These use external scripts.
 
@@ -136,6 +168,8 @@ st -o session.log
 
 ## Fonts
 
+Patch: `font2` and `ligatures` / Harfbuzz.
+
 Main font lives in `config.def.h`:
 
 ```c
@@ -168,6 +202,8 @@ printf 'arch: \uf303\n'
 ```
 
 ## Xresources
+
+Patch: `xresources`.
 
 This build reads Xresources at startup.
 
@@ -213,6 +249,8 @@ Supported Xresources names include:
 - `alphaOffset`
 
 ## Source config knobs
+
+These knobs come from base `st` plus patches like `alpha`, `font2`, `boxdraw`, `xresources`, and `anysize`.
 
 Common knobs in `config.def.h`:
 
