@@ -1,0 +1,13 @@
+#!/bin/env bash
+set -euo pipefail
+cd ~/.local/bin/st-source/
+git checkout main
+git pull
+make clean && make
+mkdir -p ~/.local/share/fonts/DroidSansMonoNerdFont
+# curl -fLo /tmp/DroidSansMNerdFontMono-Regular.otf https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/DroidSansMono/DroidSansMNerdFontMono-Regular.otf   
+curl -fLo  ~/.local/share/fonts/DroidSansMonoNerdFont/DroidSansMNerdFontMono-Regular.otf https://github.com/ryanoasis/nerd-fonts/raw/HEAD/patched-fonts/DroidSansMono/DroidSansMNerdFontMono-Regular.otf   
+# unzip -o /tmp/DroidSansMono.zip -d ~/.local/share/fonts/DroidSansMonoNerdFont/
+fc-cache -fv ~/.local/share/fonts
+fc-match "DroidSansM Nerd Font Mono"
+./st -f "DroidSansM Nerd Font Mono:pixelsize=20"
