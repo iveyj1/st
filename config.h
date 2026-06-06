@@ -246,6 +246,7 @@ static MouseShortcut mshortcuts[] = {
 static char *openurlcmd[] = { "/bin/sh", "-c", "st-urlhandler -o", "externalpipe", NULL };
 static char *copyurlcmd[] = { "/bin/sh", "-c", "st-urlhandler -c", "externalpipe", NULL };
 static char *copyoutput[] = { "/bin/sh", "-c", "st-copyout", "externalpipe", NULL };
+static char *closewarningcmd = "if command -v zenity >/dev/null 2>&1; then zenity --question --title='Close terminal?' --text='A process is still running in this terminal. Close it anyway?'; elif command -v xmessage >/dev/null 2>&1; then xmessage -center -buttons 'Cancel:1,Close:0' 'A process is still running in this terminal. Close it anyway?'; else exit 0; fi";
 
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
