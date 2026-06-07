@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+ESC=$'\e'
+printf "${ESC}[2J${ESC}[H"    # clear screen
+
+# Show cursor visibility modes
+printf "Cursor visibility tests\n"
+printf "1) Visible (default)\n"
+printf "${ESC}[?25hVisible shown for 1s\n"
+sleep 3
+
+printf "2) Invisible\n"
+printf "${ESC}[?25l"         # hide
+sleep 3
+printf "\n"
+
+printf "3) Very visible (steady block/underline depending on terminal)\n"
+printf "${ESC}[?25h"         # ensure visible before setting mode
+# Note: DECSTBM/DECTCEM differ; try DEC private mode 6/7 variations
+printf "${ESC}[?6h"         # enable origin mode (no visible effect here)
+printf "${ESC}[?5h"         # attempt visual bell mode (may not affect cursor)
+sleep 3
+printf "${ESC}[?5l"
+sleep 3
+
+# Cursor shape/styles (CSI ?... q) — many terminals support DECSCUSR
+printf "\nCursor shape/styles tests (DECSCUSR)\n"
+printf "Block:      "
+printf "${ESC}[2 q"          # steady block
+sleep 3
+printf " OK\n"
+
+printf "Blinking block: "
+printf "${ESC}[1 q"          # blinking block
+sleep 3
+printf " OK\n"
+
+printf "Underline:   "
+printf "${ESC}[4 q"          # steady underline
+sleep 3
+printf " OK\n"
+
+printf "Blinking underline: "
+printf "${ESC}[3 q"          # blinking underline
+sleep 3
+printf " OK\n"
+
+printf "Bar (beam):  "
+printf "${ESC}[6 q"          # steady bar (xterm/kitty)
+sleep 3
+printf " OK\n"
+
+printf "Blinking bar: "
+printf "${ESC}[5 q"          # blinking bar
+sleep 3
+printf " OK\n"
+
+# Save/restore cursor and visibility
+printf "\nSave cursor and hide\n"
+printf "${ESC}[s"            # save cursor
+printf "${ESC}[?25l"         # hide
+sleep 3
+printf "Restoring cursor and showing\n"
+printf "${ESC}[u"            # restore
+printf "${ESC}[?25h"         # show
+sleep 3
+
+# Cursor movement and style combined
+printf "\nMovement + style\n"
+printf "Line A\nLine B\nLine C\n"
+printf "${ESC}[2;1H"         # move to row2,col1
+printf "${ESC}[4 q"          # underline at row2
+printf "UNDERLINE HERE\n"
+sleep 3
+printf "${ESC}[1;1H"         # move to row1,col1
+printf "${ESC}[2 q"          # block at row1
+printf "BLOCK HERE\n"
+sleep 3
+
+# Reset to defaults
+printf "\nResetting cursor to default and showing\n"
+printf "${ESC}[0 q"          # reset cursor style
+printf "${ESC}[?25h"         # ensure visible
+printf "Done.\n"

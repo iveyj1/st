@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# ansi-test.sh — ANSI/VT100 test suite for st
+
+ESC=$'\e'
+
+section() {
+  printf "%s\n" "$1"
+  printf '%*s\n' "${COLUMNS:-80}" '' | tr ' ' -
+}
+
+pause() {
+  printf "%s" "Press Enter to continue..."
+  read -r
+}
+
+# Clear and show title
+printf "${ESC}[2J${ESC}[H"
+section "Basic SGR (colors, bold, underline, reverse, faint, italic)"
+printf "${ESC}[0m" # reset
+printf "Normal\n"
+printf "${ESC}[1mBold${ESC}[0m\n"
+printf "${ESC}[2mFaint (dim)${ESC}[0m\n"
+printf "${ESC}[3mItalic${ESC}[0m\n"
+printf "${ESC}[4mUnderlined${ESC}[0m\n"
+printf "${ESC}[7mReverse${ESC}[0m\n"
+printf "${ESC}[9mStrikethrough${ESC}[0m\n"
+
+section "8 Basic/High-intensity colors"
+for i in {30..37}; do printf "${ESC}[${i}m %-20s ${ESC}[0m\n" "FG $i"; done
+for i in {40..47}; do printf "${ESC}[${i}m %-20s ${ESC}[0m\n" "BG $i"; done
+echo
+for i in {90..97}; do printf "${ESC}[${i}m %-20s ${ESC}[0m\n" "HI-FG $i"; done
+for i in {100..107}; do printf "${ESC}[${i}m %-20s ${ESC}[0m\n" "HI-BG $i"; done
+
+section "256-color foreground sample (0-255)"
+for base in 0 16 32 48 64 80 96 112; do
+  for i in $(seq $base $((base+15))); do
+    printf "${ESC}[48;5;${i}m${ESC}[38;5;15m %3d ${ESC}[0m" "$i"
+  done
+  echo
+done
+echo
+
+section "Truecolor (24-bit) gradients"
+# horizontal color gradient sample
+for r in 0 51 102 153 204 255; do
+  for g in 0 51 102 153 204 255; do
+    for b in 0 51 102 153 204 255; do
+      printf "${ESC}[48;2;%d;%d;%dm " "$r" "$g" "$b"
+      printf "${ESC}[0m"
+    done
+    printf " "
+  done
+  echo
+done
+echo
+printf "${ESC}[48;2;255;0;0m${ESC}[38;2;0;0;0m Truecolor red bg ${ESC}[0m\n"
+printf "${ESC}[38;2;0;255;0mTruecolor green FG${ESC}[0m\n"
+
+section "Cursor movement & line editing"
+printf "${ESC}[2J${ESC}[H" # clear
+printf "Line1\nLine2\nLine3\nLine4\nLine5\n"
+printf "${ESC}[2;5H" # move to row2,col5
+printf "${ESC}[7m" "INVERTED@R2C5" "${ESC}[0m\n"
+sleep 0.4
+printf "${ESC}[5;1H" # move to row5,col1
+printf "Appending at row5\n"
+sleep 0.4
+
+section "Save/restore cursor and title set"
+printf "${ESC}]0;st ANSI test - running\a" # set window title
+printf "${ESC}[s" # save cursor
+printf "Saved cursor. Moving... "
+printf "${ESC}[10;10H" "X"
+sleep 0.4
+printf "${ESC}[u" # restore cursor
+printf " (restored)\n"
+
+section "Erasing"
+printf "1234567890\n"
+printf "${ESC}[1A" # up 1
+printf "${ESC}[K" # erase to end of line
+printf "After erase to EOL\n"
+printf "Will clear screen in 1s...\n"
+sleep 1
+printf "${ESC}[2J${ESC}[H"
+printf "Screen cleared\n"
+
+section "Bell (may be visual in st)"
+printf "Triggering BEL (may be visual only): ${ESC}[?5h" # set reverse video for visual bell test
+sleep 0.2
+printf "${ESC}[?5l" # unset
+printf "\a\n"
+
+section "OSC (Operating System Command) — title, clipboard hints (may be disabled by st)"
+printf "${ESC}]0;st ANSI test - OSC title\a\n"
+# OSC 52 clipboard (may be disabled by st)
+printf "Attempting OSC 52 clipboard set (base64 of 'hello'):\n"
+printf "${ESC}]52;c;$(printf hello | base64)\a\n"
+
+section "DECSC/DECRC (save/restore full terminal state)"
+printf "Testing save/restore DEC private mode\n"
+printf "${ESC}[?25l" # hide cursor
+sleep 0.2
+printf "${ESC}[s" # save
+printf "Hidden cursor, waiting 0.5s..."
+sleep 0.5
+printf "${ESC}[u" # restore
+printf "${ESC}[?25h" # show cursor
+echo
+
+section "Keypad/Bracketed paste mode"
+printf "Enabling bracketed paste, paste something now (then press Enter):\n"
+printf "${ESC}[?2004h"
+pause
+printf "${ESC}[?2004l"
+
+section "VT sequences to stress-test"
+# Cursor up/down/left/right, insert/delete line/char
+printf "0123456789abcdef\n"
+printf "${ESC}[2A" # up 2
+printf "${ESC}[5C" # forward 5
+printf "${ESC}[4@%s" "INS" # insert 4 chars (may shift)
+printf "${ESC}[2B" # down 2
+printf "${ESC}[3P" # delete 3 chars
+echo
+
+section "OSC 8 (hyperlink) test"
+printf "Hyperlink (clickable if supported): ${ESC}]8;;https://example.com\aClick me${ESC}]8;;\a\n"
+
+section "Bell & visual bell alternate (VT100)"
+# Try visual bell via DEC private mode if supported
+printf "${ESC}[?5hVisual bell on (reverse video)${ESC}[?5l\n"
+
+section "Final SGR reset and summary"
+printf "${ESC}[0m"
+printf "End of tests.\n"
