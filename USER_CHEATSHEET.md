@@ -52,7 +52,8 @@ Names follow common suckless patch names where possible.
 | `copyout` helper | Copies output of recent command through `st-copyout`. |
 | `alpha` | Adds background transparency. |
 | `alpha-focus-highlight` | Changes opacity when focused/unfocused. |
-| `xresources` | Loads font, colors, alpha, border, and other settings from Xresources. |
+| `no-bold-colors` | Bold text no longer automatically switches ANSI colors 0-7 to bright colors 8-15. |
+| `xresources` | Loads font, colors, alpha, cursor style, border, and other settings from Xresources. |
 | `anysize` | Allows any window size. Pads unused space cleanly. |
 | `font2` | Adds configured fallback fonts. Useful for emoji and Nerd Font symbols. |
 | `boxdraw` | Draws box/block characters internally for clean alignment. |
@@ -60,6 +61,7 @@ Names follow common suckless patch names where possible.
 | `xclearwin` | Clears dirty borders after color/window changes. |
 | `osc` / `osc-color-reload` | Supports live color changes from OSC sequences. Useful for pywal. |
 | `vim-browse`-style normal mode | Adds keyboard browsing over scrollback. This is a local port, not a clean upstream patch apply. |
+| close-warning helper | When the window is closed while a child process is still running, prompts via `zenity` or `xmessage` before sending hangup. |
 | `newterm` is not included | No default keybind launches another terminal. |
 
 ## Core keybinds
@@ -68,8 +70,8 @@ Names follow common suckless patch names where possible.
 |---|---|
 | `Alt+c` | Copy selection to clipboard. |
 | `Alt+v` | Paste from clipboard. |
-| `Ctrl+Shift+c` | Copy selection to clipboard. |
-| `Ctrl+Shift+v` | Paste from clipboard. |
+| `Ctrl+Shift+c` or `Ctrl+Shift+C` | Copy selection to clipboard. |
+| `Ctrl+Shift+v` or `Ctrl+Shift+V` | Paste from clipboard. |
 | `Shift+Insert` | Paste from clipboard. |
 | `Alt+Shift+c` | Copy selection to clipboard. |
 | `Alt+Shift+v` | Paste from clipboard. |
@@ -83,10 +85,10 @@ Patch: `scrollback`, `scrollback-mouse`, `scrollback-mouse-altscreen`.
 
 | Key / mouse | Action |
 |---|---|
-| `Mouse wheel up` | Scroll back 1 line. |
-| `Mouse wheel down` | Scroll forward 1 line. |
-| `Alt+k` | Scroll back 1 line. |
-| `Alt+j` | Scroll forward 1 line. |
+| `Mouse wheel up` | Scroll back 4 lines. |
+| `Mouse wheel down` | Scroll forward 4 lines. |
+| `Alt+Ctrl+k` | Scroll back 1 line. |
+| `Alt+Ctrl+j` | Scroll forward 1 line. |
 | `Alt+Up` | Scroll back 1 line. |
 | `Alt+Down` | Scroll forward 1 line. |
 | `Alt+u` | Scroll back 1 page. |
@@ -133,15 +135,17 @@ Not included yet: `/` search, `n/N`, text objects, counts, macros.
 
 | Key | Action |
 |---|---|
-| `Alt+Shift+PageUp` | Increase font size. |
-| `Alt+Shift+PageDown` | Decrease font size. |
+| `Ctrl+=` | Increase font size. |
+| `Ctrl+-` | Decrease font size. |
+| `Ctrl+Home` | Reset font size. |
+| `Ctrl+Mouse wheel up` | Increase font size. |
+| `Ctrl+Mouse wheel down` | Decrease font size. |
 | `Alt+Shift+Up` | Increase font size. |
 | `Alt+Shift+Down` | Decrease font size. |
 | `Alt+Shift+K` | Increase font size. |
 | `Alt+Shift+J` | Decrease font size. |
 | `Alt+Shift+U` | Increase font size by 2. |
 | `Alt+Shift+D` | Decrease font size by 2. |
-| `Alt+Shift+Home` | Reset font size. |
 
 ## Transparency
 
@@ -155,7 +159,7 @@ Patch: `alpha`, plus focus alpha support.
 Config values:
 
 ```c
-float alpha = 0.8;
+float alpha = 1.0;
 float alphaOffset = 0.0;
 float alphaUnfocus;
 ```
@@ -173,6 +177,7 @@ Required runtime tools:
 | Tool | Used for | Common package name |
 |---|---|---|
 | `dmenu` | URL/output picker menu. | `dmenu` |
+| `zenity` or `xmessage` | Optional close warning prompt when a child process is running. | `zenity`, `x11-utils`, or similar |
 | `xdg-open` | Open selected URL. | `xdg-utils` |
 | `xclip` | Copy selected URL/output. | `xclip` |
 | `st-urlhandler` | Extract/open/copy URLs. | Installed by this repo. |
@@ -230,17 +235,17 @@ Useful font packages:
 | Noto Color Emoji | Emoji fallback. |
 | Symbols Nerd Font | Symbol fallback if main font lacks icons. |
 
-Main font lives in `config.def.h`:
+Main font in the current checked-in `config.h`:
 
 ```c
-static char *font = "mono:pixelsize=12:antialias=true:autohint=true";
+static char *font = "Droid Sans M Nerd Font Mono:size=13:antialias=true:autohint=true";
 ```
 
 Fallback fonts live in `font2`:
 
 ```c
 static char *font2[] = {
-    "NotoColorEmoji:pixelsize=10:antialias=true:autohint=true"
+    "mono:pixelsize=12:antialias=true:autohint=true"
 };
 ```
 
@@ -251,9 +256,10 @@ If icons look too large, fontconfig probably chose an emoji fallback for those g
 Test font names:
 
 ```sh
-fc-match "DejaVu Sans Mono:pixelsize=24"
+fc-match "DejaVu Sans Mono:size=13"
 fc-list | grep -i droid
 fc-scan /path/to/font.ttf | grep family
+getfont /path/to/font.ttf
 ```
 
 Test glyphs:
@@ -275,6 +281,7 @@ Example `~/.Xresources`:
 st.font: DejaVu Sans Mono:pixelsize=24:antialias=true:autohint=true
 st.fontalt0: Noto Color Emoji:pixelsize=20:antialias=true:autohint=true
 st.alpha: 0.95
+st.cursorstyle: 2
 st.borderpx: 4
 st.background: #282828
 st.foreground: #ebdbb2
@@ -302,6 +309,7 @@ Supported Xresources names include:
 - `minlatency`
 - `maxlatency`
 - `blinktimeout`
+- `cursorstyle`
 - `bellvolume`
 - `tabspaces`
 - `borderpx`
@@ -314,7 +322,7 @@ Supported Xresources names include:
 
 These knobs come from base `st` plus patches like `alpha`, `font2`, `boxdraw`, `xresources`, and `anysize`.
 
-Common knobs in `config.def.h`:
+Common knobs in `config.def.h` / generated `config.h`:
 
 | Name | Meaning |
 |---|---|
@@ -342,8 +350,9 @@ Common knobs in `config.def.h`:
 | `defaultfg` | Default foreground color index. |
 | `defaultbg` | Default background color index. |
 | `defaultcs` | Cursor color index. |
-| `cursorshape` | Cursor shape. |
-| `cols`, `rows` | Default terminal size. |
+| `cursorstyle` | Cursor style: 0/1 blinking block, 2 steady block, 3/4 underline, 5/6 bar, 7/8 custom `stcursor`. |
+| `stcursor` | Unicode rune for custom st cursor styles 7/8, default snowman. |
+| `cols`, `rows` | Default terminal size. Current generated `config.h` uses `120x42`; `config.def.h` remains `80x24`. |
 
 ## Rebuild after config changes
 
@@ -370,6 +379,7 @@ sudo make install
 ## Notes
 
 - `config.h` is generated from `config.def.h` when missing.
-- Edit `config.def.h` for tracked defaults.
-- Edit `config.h` only for local throwaway testing.
+- This repo currently has a checked-in `config.h` with local defaults such as `120x42`, `alpha = 1.0`, and the Droid Sans M Nerd Font setting.
+- Edit `config.def.h` for portable tracked defaults.
+- Edit `config.h` for the exact local build defaults.
 - Some desktop environments bind `Alt` shortcuts first. Change `MODKEY` if needed.

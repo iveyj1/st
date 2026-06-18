@@ -127,6 +127,7 @@ typedef struct {
 	Line *alt;    /* alternate screen */
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
+	int histn;    /* history lines used */
 	int scr;      /* scroll back */
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
@@ -185,6 +186,7 @@ static void tprinter(char *, size_t);
 static void tdumpsel(void);
 static void tdumpline(int);
 static void tdump(void);
+static void tclearhist(void);
 static void tclearregion(int, int, int, int);
 static void tcursor(int);
 static void tdeletechar(int);
@@ -1297,6 +1299,24 @@ tcursor(int mode)
 }
 
 void
+tclearhist(void)
+{
+	int i, j;
+
+	for (i = 0; i < HISTSIZE; i++) {
+		for (j = 0; j < term.col; j++) {
+			term.hist[i][j] = term.c.attr;
+			term.hist[i][j].u = ' ';
+		}
+	}
+	term.histi = 0;
+	term.histn = 0;
+	term.scr = 0;
+	selclear();
+	tfulldirt();
+}
+
+void
 treset(void)
 {
 	uint i;
@@ -1322,6 +1342,7 @@ treset(void)
 		tclearregion(0, 0, term.col-1, term.row-1);
 		tswapscreen();
 	}
+	tclearhist();
 }
 
 void
@@ -1369,7 +1390,10 @@ kscrollup(const Arg* a)
 	if (n < 0)
 		n = term.row + n;
 
-	if (term.scr <= HISTSIZE-n) {
+	if (n > term.histn - term.scr)
+		n = term.histn - term.scr;
+
+	if (n > 0) {
 		term.scr += n;
 		selscroll(0, n);
 		tfulldirt();
@@ -1386,6 +1410,7 @@ tscrolldown(int orig, int n, int copyhist)
 
 	if (copyhist) {
 		term.histi = (term.histi - 1 + HISTSIZE) % HISTSIZE;
+		term.histn = MIN(term.histn + 1, HISTSIZE);
 		temp = term.hist[term.histi];
 		term.hist[term.histi] = term.line[term.bot];
 		term.line[term.bot] = temp;
@@ -1414,6 +1439,7 @@ tscrollup(int orig, int n, int copyhist)
 
 	if (copyhist) {
 		term.histi = (term.histi + 1) % HISTSIZE;
+		term.histn = MIN(term.histn + 1, HISTSIZE);
 		temp = term.hist[term.histi];
 		term.hist[term.histi] = term.line[orig];
 		term.line[orig] = temp;
@@ -2061,6 +2087,10 @@ csihandle(void)
 			break;
 		case 2: /* all */
 			tclearregion(0, 0, term.col-1, term.row-1);
+			tclearhist();
+			break;
+		case 3: /* saved lines */
+			tclearhist();
 			break;
 		default:
 			goto unknown;
