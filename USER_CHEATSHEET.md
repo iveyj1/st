@@ -68,6 +68,7 @@ Names follow common suckless patch names where possible.
 
 | Key | Action |
 |---|---|
+| `Alt+F4` | Close the terminal; prompts if a child process is running. |
 | `Alt+c` | Copy selection to clipboard. |
 | `Alt+v` | Paste from clipboard. |
 | `Ctrl+Shift+c` or `Ctrl+Shift+C` | Copy selection to clipboard. |
@@ -177,7 +178,7 @@ Required runtime tools:
 | Tool | Used for | Common package name |
 |---|---|---|
 | `dmenu` | URL/output picker menu. | `dmenu` |
-| `zenity` or `xmessage` | Optional close warning prompt when a child process is running. | `zenity`, `x11-utils`, or similar |
+| `dmenu` | Text-mode close warning prompt when a child process is running. | `dmenu` |
 | `xdg-open` | Open selected URL. | `xdg-utils` |
 | `xclip` | Copy selected URL/output. | `xclip` |
 | `st-urlhandler` | Extract/open/copy URLs. | Installed by this repo. |

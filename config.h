@@ -255,10 +255,11 @@ static MouseShortcut mshortcuts[] = {
 static char *openurlcmd[] = { "/bin/sh", "-c", "st-urlhandler -o", "externalpipe", NULL };
 static char *copyurlcmd[] = { "/bin/sh", "-c", "st-urlhandler -c", "externalpipe", NULL };
 static char *copyoutput[] = { "/bin/sh", "-c", "st-copyout", "externalpipe", NULL };
-static char *closewarningcmd = "if command -v zenity >/dev/null 2>&1; then zenity --question --title='Close terminal?' --text='A process is still running in this terminal. Close it anyway?'; elif command -v xmessage >/dev/null 2>&1; then xmessage -center -buttons 'Cancel:1,Close:0' 'A process is still running in this terminal. Close it anyway?'; else exit 0; fi";
+static char *closewarningcmd = "printf '%s\\n' Cancel Close | dmenu -c -fn 'DroidSansM Nerd Font:size=13' -l 2 -p 'A process is still running. Close terminal?' | grep -qx Close";
 
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
+	{ MODKEY,               XK_F4,          quit,           {.i =  0} },
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
 	{ ControlMask,          XK_Print,       toggleprinter,  {.i =  0} },
 	{ ShiftMask,            XK_Print,       printscreen,    {.i =  0} },

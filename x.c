@@ -76,6 +76,7 @@ static void zoom(const Arg *);
 static void zoomabs(const Arg *);
 static void zoomreset(const Arg *);
 static void ttysend(const Arg *);
+static void quit(const Arg *);
 
 /* config.h for applying patches and the configuration. */
 #include "config.h"
@@ -365,6 +366,15 @@ void
 ttysend(const Arg *arg)
 {
 	ttywrite(arg->s, strlen(arg->s), 1);
+}
+
+void
+quit(const Arg *arg)
+{
+	if (ttybusy() && system(closewarningcmd) != 0)
+		return;
+	ttyhangup();
+	exit(0);
 }
 
 int
@@ -2130,10 +2140,7 @@ cmessage(XEvent *e)
 			win.mode &= ~MODE_FOCUSED;
 		}
 	} else if (e->xclient.data.l[0] == xw.wmdeletewin) {
-		if (ttybusy() && system(closewarningcmd) != 0)
-			return;
-		ttyhangup();
-		exit(0);
+		quit(NULL);
 	}
 }
 
